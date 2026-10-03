@@ -1,4 +1,4 @@
-# Environment variables
+# Environment
 .env
 .env.local
 .env.*.local
@@ -21,12 +21,10 @@ parts/
 sdist/
 var/
 wheels/
-pip-wheel-metadata/
-share/python-wheels/
 *.egg-info/
 .installed.cfg
 *.egg
-MANIFEST
+PIPFILE.lock
 
 # Virtual environments
 venv/
@@ -41,6 +39,7 @@ env/
 *.swo
 *~
 .DS_Store
+*.iml
 
 # Logging
 *.log
@@ -67,3 +66,5 @@ Thumbs.db
 instance/
 .webassets-cache
 redis_data/
+.coverage
+htmlcov/

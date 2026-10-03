@@ -1,20 +1,28 @@
-version: '3.8'
+version: '3.9'
 
 services:
   bot:
     build: .
+    container_name: deepseek-telegram-bot
     ports:
       - "8000:8000"
     environment:
       - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
       - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
+      - DEEPSEEK_API_URL=${DEEPSEEK_API_URL}
       - WEBHOOK_URL=${WEBHOOK_URL}
       - SERVER_HOST=0.0.0.0
       - SERVER_PORT=8000
       - LOG_LEVEL=INFO
       - MODEL=deepseek-chat
-      - MAX_TOKENS=1000
+      - REASONING_MODEL=deepseek-reasoner
+      - MAX_TOKENS=2000
+      - REASONING_MAX_TOKENS=8000
       - TEMPERATURE=0.7
+      - ENABLE_REASONING=true
+      - ENABLE_CONTEXT=true
+      - MAX_HISTORY=20
+      - CONTEXT_TIMEOUT=3600
     volumes:
       - ./logs:/app/logs
     restart: unless-stopped
@@ -27,6 +35,7 @@ services:
 
   redis:
     image: redis:7-alpine
+    container_name: deepseek-redis
     ports:
       - "6379:6379"
     volumes:

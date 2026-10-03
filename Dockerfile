@@ -1,6 +1,7 @@
 FROM python:3.9-slim
 
-# Set working directory
+LABEL maintainer="hadedhamzad-tech"
+
 WORKDIR /app
 
 # Install system dependencies
@@ -16,6 +17,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
 COPY . .
+
+# Create logs directory
+RUN mkdir -p logs
 
 # Create non-root user
 RUN useradd -m -u 1000 botuser && chown -R botuser:botuser /app

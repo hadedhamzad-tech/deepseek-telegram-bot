@@ -1,32 +1,37 @@
-# 🚀 راهنمای배포
+# 🚀 راهنمای Deployment
 
-راهنمای جامع برای배포ربات در محیط‌های مختلف
+راهنمای جامع برای deploy کردن ربات بر روی سرورهای مختلف.
 
 ## 📋 فهرست
 
-- [Heroku](#heroku)
-- [Railway](#railway)
-- [Render](#render)
-- [DigitalOcean](#digitalocean)
-- [AWS](#aws)
-- [Docker Compose](#docker-compose)
+1. [Heroku](#heroku)
+2. [Railway](#railway)
+3. [Render](#render)
+4. [DigitalOcean](#digitalocean)
+5. [VPS ایرانی](#vps-ایرانی)
+6. [Docker](#docker)
 
 ---
 
 ## ☁️ Heroku
 
-### 1. نصب Heroku CLI
+### پیش‌نیاز‌ها
+- Heroku CLI
+- حساب Heroku
+
+### مراحل
+
+1. **Login**
 ```bash
-curl https://cli.heroku.com/install.sh | sh
 heroku login
 ```
 
-### 2. ایجاد اپلیکیشن
+2. **ایجاد اپلیکیشن**
 ```bash
 heroku create your-bot-name
 ```
 
-### 3. تنظیم متغیرهای محیطی
+3. **تنظیم متغیرهای محیطی**
 ```bash
 heroku config:set TELEGRAM_BOT_TOKEN=your_token
 heroku config:set DEEPSEEK_API_KEY=your_key
@@ -34,12 +39,12 @@ heroku config:set WEBHOOK_URL=https://your-bot-name.herokuapp.com/webhook
 heroku config:set LOG_LEVEL=INFO
 ```
 
-### 4. Deploy
+4. **Deploy**
 ```bash
 git push heroku main
 ```
 
-### 5. مشاهده لاگ‌ها
+5. **مشاهده لاگ‌ها**
 ```bash
 heroku logs --tail
 ```
@@ -48,57 +53,55 @@ heroku logs --tail
 
 ## 🚂 Railway
 
-### 1. اتصال Repository
-- به [railway.app](https://railway.app) بروید
-- **New Project** → **Deploy from GitHub repo**
-- Repository خود را انتخاب کنید
+### مراحل
 
-### 2. تنظیم Environment Variables
-در بخش Variables:
+1. به [railway.app](https://railway.app) بروید
+2. **New Project** → **Deploy from GitHub repo**
+3. Repository خود را انتخاب کنید
+4. تنظیم متغیرهای محیطی در بخش **Variables**
+5. Deploy خودکار انجام می‌شود
+
+### Environment Variables
 ```
 TELEGRAM_BOT_TOKEN=your_token
 DEEPSEEK_API_KEY=your_key
 WEBHOOK_URL=https://your-app.railway.app/webhook
+PORT=8000
 ```
-
-### 3. Deploy
-- Railway خودکار deploy می‌کند
 
 ---
 
 ## 🎨 Render
 
-### 1. ایجاد New Web Service
-- [render.com](https://render.com) → **New +** → **Web Service**
-- GitHub repo متصل کنید
+### مراحل
 
-### 2. تنظیمات
-- **Name**: your-bot-name
-- **Runtime**: Python 3.9
-- **Build**: `pip install -r requirements.txt`
-- **Start**: `python -m uvicorn app:app --host 0.0.0.0`
-
-### 3. Environment Variables
-```
-TELEGRAM_BOT_TOKEN=your_token
-DEEPSEEK_API_KEY=your_key
-WEBHOOK_URL=https://your-bot-name.onrender.com/webhook
-```
+1. به [render.com](https://render.com) بروید
+2. **New +** → **Web Service**
+3. GitHub repo متصل کنید
+4. تنظیمات:
+   - **Name**: your-bot-name
+   - **Runtime**: Python 3.9
+   - **Build**: `pip install -r requirements.txt`
+   - **Start**: `python -m uvicorn app:app --host 0.0.0.0 --port $PORT`
+5. تنظیم Environment Variables
 
 ---
 
 ## 💧 DigitalOcean
 
-### 1. ایجاد Droplet
+### ایجاد Droplet
+
+1. ایجاد Ubuntu 22.04 Droplet
+2. SSH به سرور
+
+### نصب و تنظیم
+
 ```bash
-# SSH به droplet
-ssh root@your_droplet_ip
-
 # Update system
-apt update && apt upgrade -y
+sudo apt update && sudo apt upgrade -y
 
-# نصب Python و Git
-apt install -y python3.9 python3-pip git
+# Install dependencies
+sudo apt install -y python3.9 python3-pip git nginx
 
 # Clone repository
 git clone https://github.com/hadedhamzad-tech/deepseek-telegram-bot.git
@@ -108,19 +111,15 @@ cd deepseek-telegram-bot
 python3.9 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
-```
 
-### 2. تنظیم .env
-```bash
+# Create .env
 cp .env.example .env
-nano .env
-# ویرایش و save کنید
+# Edit .env with your credentials
 ```
 
-### 3. Systemd Service
-```bash
-sudo nano /etc/systemd/system/deepseek-bot.service
-```
+### Systemd Service
+
+فایل `/etc/systemd/system/deepseek-bot.service`:
 
 ```ini
 [Unit]
@@ -130,9 +129,9 @@ After=network.target
 [Service]
 Type=notify
 User=www-data
-WorkingDirectory=/root/deepseek-telegram-bot
-Environment="PATH=/root/deepseek-telegram-bot/venv/bin"
-ExecStart=/root/deepseek-telegram-bot/venv/bin/python -m uvicorn app:app --host 0.0.0.0 --port 8000
+WorkingDirectory=/home/ubuntu/deepseek-telegram-bot
+Environment="PATH=/home/ubuntu/deepseek-telegram-bot/venv/bin"
+ExecStart=/home/ubuntu/deepseek-telegram-bot/venv/bin/python -m uvicorn app:app --host 0.0.0.0 --port 8000
 Restart=always
 RestartSec=10
 
@@ -147,11 +146,9 @@ sudo systemctl start deepseek-bot
 sudo systemctl status deepseek-bot
 ```
 
-### 4. Nginx Reverse Proxy
-```bash
-sudo apt install -y nginx
-sudo nano /etc/nginx/sites-available/deepseek-bot
-```
+### Nginx Reverse Proxy
+
+فایل `/etc/nginx/sites-available/deepseek-bot`:
 
 ```nginx
 server {
@@ -174,175 +171,194 @@ sudo nginx -t
 sudo systemctl restart nginx
 ```
 
-### 5. SSL (Let's Encrypt)
+### SSL (Let's Encrypt)
+
 ```bash
 sudo apt install -y certbot python3-certbot-nginx
 sudo certbot certonly --nginx -d your-domain.com
 ```
 
+آپدیت Nginx config برای HTTPS
+
 ---
 
-## ☁️ AWS
+## 🖥️ VPS ایرانی
 
-### با EC2
+### نصب Python 3.9
 
 ```bash
-# SSH به instance
-ssh -i your-key.pem ec2-user@your-instance-ip
-
-# Install
-sudo yum update -y
-sudo yum install python39 -y
-git clone https://github.com/hadedhamzad-tech/deepseek-telegram-bot.git
-cd deepseek-telegram-bot
-python3.9 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
+sudo apt install -y software-properties-common
+sudo add-apt-repository ppa:deadsnakes/ppa
+sudo apt update
+sudo apt install -y python3.9 python3.9-venv python3.9-dev
 ```
 
-### با ECS + Fargate
+### نصب و راه‌اندازی
 
-1. Create ECR Repository
-2. Push Docker image
-3. Create ECS Task Definition
-4. Create Service
-5. Set ALB
+```bash
+cd /opt
+sudo git clone https://github.com/hadedhamzad-tech/deepseek-telegram-bot.git
+cd deepseek-telegram-bot
+
+sudo python3.9 -m venv venv
+sudo source venv/bin/activate
+sudo pip install -r requirements.txt
+
+sudo cp .env.example .env
+# Edit .env
+```
+
+### تنظیم Supervisor
+
+فایل `/etc/supervisor/conf.d/deepseek-bot.conf`:
+
+```ini
+[program:deepseek-bot]
+directory=/opt/deepseek-telegram-bot
+command=/opt/deepseek-telegram-bot/venv/bin/python -m uvicorn app:app --host 0.0.0.0 --port 8000
+autostart=true
+autorestart=true
+startsecs=10
+stopwaitsecs=10
+stdout_logfile=/var/log/deepseek-bot.log
+stderr_logfile=/var/log/deepseek-bot.err
+```
+
+```bash
+sudo supervisorctl reread
+sudo supervisorctl update
+sudo supervisorctl start deepseek-bot
+```
 
 ---
 
-## 🐳 Docker Compose
+## 🐳 Docker
 
-### بر روی VPS
+### Build
 
 ```bash
-# Install Docker
-curl -fsSL https://get.docker.com -o get-docker.sh
-sudo sh get-docker.sh
-sudo usermod -aG docker $USER
+docker build -t deepseek-telegram-bot .
+```
 
-# Clone repository
-git clone https://github.com/hadedhamzad-tech/deepseek-telegram-bot.git
-cd deepseek-telegram-bot
+### اجرا
 
-# تنظیم .env
-cp .env.example .env
-nano .env
+```bash
+docker run -p 8000:8000 \
+  -e TELEGRAM_BOT_TOKEN=your_token \
+  -e DEEPSEEK_API_KEY=your_key \
+  -e WEBHOOK_URL=https://your-domain.com/webhook \
+  deepseek-telegram-bot
+```
 
-# Start services
+### Docker Compose
+
+```bash
 docker-compose up -d
-
-# لاگ‌ها
 docker-compose logs -f
-
-# Stop
-docker-compose down
 ```
 
 ---
 
-## 🔒 بهترین‌ practices
+## 🔒 SSL/TLS با Nginx
 
-### 1. Environment Variables
-- ❌ هرگز tokens را در کد hardcode نکنید
-- ✅ از `.env` استفاده کنید
-- ✅ `.env` را در `.gitignore` بگذارید
+### تنظیم SSL
 
-### 2. Monitoring
+```nginx
+server {
+    listen 443 ssl http2;
+    server_name your-domain.com;
+    
+    ssl_certificate /etc/letsencrypt/live/your-domain.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/your-domain.com/privkey.pem;
+    
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers HIGH:!aNULL:!MD5;
+    
+    location / {
+        proxy_pass http://localhost:8000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+    }
+}
+
+server {
+    listen 80;
+    server_name your-domain.com;
+    return 301 https://$server_name$request_uri;
+}
+```
+
+---
+
+## 📊 Monitoring
+
+### بررسی وضعیت
+
 ```bash
-# Health check
 curl https://your-domain.com/health
-
-# Stats
 curl https://your-domain.com/stats
 ```
 
-### 3. Logging
+### مشاهده لاگ‌ها
+
 ```bash
-# بررسی لاگ‌ها
-docker-compose logs -f bot
+# Docker
+docker logs deepseek-telegram-bot -f
+
+# Systemd
+sudo journalctl -u deepseek-bot -f
+
+# File
 tail -f logs/bot.log
 ```
 
-### 4. SSL/TLS
-- ✅ همیشه HTTPS استفاده کنید
-- ✅ مطمئن شوید WEBHOOK_URL با HTTPS شروع می‌شود
-- ✅ SSL certificate را آپدیت نگه دارید
-
-### 5. Rate Limiting
-- محدود کنید requests به DeepSeek API
-- استفاده کنید rate limiting middleware
-- Handle کنید API errors gracefully
-
 ---
 
-## 🐛 Troubleshooting
+## 🔄 Backup و Restore
 
-### Bot not responding
+### Backup
+
 ```bash
-# بررسی service status
-systemctl status deepseek-bot
-
-# لاگ‌ها
-journalctl -u deepseek-bot -n 50
-
-# Restart
-systemctl restart deepseek-bot
+tar -czf deepseek-bot-backup.tar.gz logs/ .env
 ```
 
-### Webhook issues
-```bash
-# بررسی webhook
-curl -X POST https://your-domain.com/webhook \
-  -H "Content-Type: application/json" \
-  -d '{"update_id": 1}'
-```
+### Restore
 
-### API errors
 ```bash
-# بررسی DeepSeek API status
-curl -H "Authorization: Bearer $DEEPSEEK_API_KEY" \
-  https://api.deepseek.com/v1/models
+tar -xzf deepseek-bot-backup.tar.gz
 ```
 
 ---
 
-## 📊 Monitoring و Analytics
+## ⚡ Performance Tips
 
-### با Sentry (Error Tracking)
-```bash
-pip install sentry-sdk
-```
-
-```python
-import sentry_sdk
-
-sentry_sdk.init(
-    dsn="your-sentry-dsn",
-    traces_sample_rate=1.0
-)
-```
-
-### با Prometheus (Metrics)
-```bash
-pip install prometheus-client
-```
+1. استفاده از webhook بجای polling
+2. Redis برای caching
+3. Load balancing برای traffic زیاد
+4. CDN برای static files
+5. Monitoring و alerting
 
 ---
 
-## 🔄 Auto-Updates
+## 🛠️ Troubleshooting
 
-برای بروزرسانی خودکار:
+### خطای 502 Bad Gateway
+- بررسی Nginx configuration
+- مطمئن شوید app در حال اجرا است
+- لاگ‌ها را بررسی کنید
 
-```bash
-# Setup cron job
-crontab -e
+### خطای Webhook
+- مطمئن شوید HTTPS است
+- URL صحیح است
+- SSL certificate valid است
 
-# اضافه کنید:
-0 2 * * 0 cd /root/deepseek-telegram-bot && git pull && systemctl restart deepseek-bot
-```
+### High Memory Usage
+- MAX_HISTORY را کاهش دهید
+- Context expire timeout را کاهش دهید
+- Redis برای caching استفاده کنید
 
 ---
 
-**آماده است! 🎉**
-
-سوالی دارید؟ Issue بسازید یا تماس بگیرید.
+**آپدیت شده: اکتبر 2024**
